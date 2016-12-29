@@ -33,6 +33,7 @@
 **Hypothesis:** Pearson's r remains same or improves for developing questions
 
 **Approach:**
+
     1. Grab top answers from each of 250 developing questions
     2. Obtain datasets for `mean answer view count` and `question's view count`
     3. Normalise datasets
