@@ -3,7 +3,6 @@ from pprint import pprint
 
 import requests
 from bs4 import BeautifulSoup
-from robobrowser import RoboBrowser
 
 from local_settings import M_S
 
@@ -50,6 +49,8 @@ class Quora:
             answer_count = int(answer_dom.text.split(' ')[0])
         except (AttributeError, IndexError):
             answer_count = 0
+        except ValueError:
+            answer_count = '100+'
 
         question_dom = soup.select('.question_qtext')[0]
         question = question_dom.find('span', {'class': 'rendered_qtext'}).text
