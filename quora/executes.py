@@ -110,7 +110,7 @@ class Ex1(Quora):
         plt.scatter(x, y)
         plt.show()
 
-    def calculate_p_value(self):
+    def calculate_r(self):
         x, y, data_set = self.get_x_y_dataset()
-        correlation, _ = stats.pearsonr(x, y)
-        return correlation
+        r, _ = stats.pearsonr(x, y)
+        return r
