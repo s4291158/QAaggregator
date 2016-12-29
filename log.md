@@ -1,10 +1,12 @@
 # Aim: Maximum views on my answers
 
 ## Definitions
-
 **question infancy period:** 2 days
+
 **developing question:** A question that has little to no answers, likely to be within infancy period
+
 **developed question:** A question that has many answers, likely to be over infancy period
+
 **top answers:** Top *(max 6, scrape limit)* answers to a given question
 
 ## Note
