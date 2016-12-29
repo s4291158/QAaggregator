@@ -1,82 +1,26 @@
 import json
-from pprint import pprint
 
 import requests
 from bs4 import BeautifulSoup
 
 from local_settings import M_S
+from .parsers import int_parser
+from urllib import parse
+import os
 
 
-class Quora:
+def bs(text):
+    return BeautifulSoup(text, 'lxml')
+
+
+class URLMixin:
     URL = 'https://www.quora.com/'
-    session = requests.session()
-    winners = []
-
-    def __init__(self, login=True):
-        if login:
-            self.cookie_login()
-            assert self.is_logged_in()
-            print('log in successful')
-        else:
-            print('no attempts to login')
 
     def get_url(self, *args):
-        return self.URL + '/'.join(args)
+        return parse.urljoin(self.URL, os.path.join(*args))
 
-    def cookie_login(self):
-        self.session.cookies['m-s'] = M_S
 
-    def is_logged_in(self):
-        response = self.session.get(self.get_url('api', 'logged_in_user'))
-        if response.status_code == 200 and len(response.text) > 9:
-            return True
-        return False
-
-    def get_question_data1(self, url):
-        soup = BeautifulSoup(self.session.get(url).text, 'lxml')
-
-        follow_dom = soup.select('.secondary_action')[0]
-        follow_count = int(follow_dom.find('span', {'class': 'count'}).text)
-
-        try:
-            comment_dom = soup.select('.view_comments')[0]
-            comment_count = int(comment_dom.find('span', {'class': 'count'}).text.replace('+', ''))
-        except (AttributeError, IndexError):
-            comment_count = 0
-
-        try:
-            answer_dom = soup.select('.answer_count')[0]
-            answer_count = int(answer_dom.text.split(' ')[0])
-        except (AttributeError, IndexError):
-            answer_count = 0
-        except ValueError:
-            answer_count = '100+'
-
-        question_dom = soup.select('.question_qtext')[0]
-        question = question_dom.find('span', {'class': 'rendered_qtext'}).text
-
-        detail_dom = soup.select('.question_details')[0]
-        detail = detail_dom.find('span', {'class': 'rendered_qtext'}).text
-
-        view_dom = soup.select('.ViewsRow')[0]
-        view_count = int(view_dom.text.replace(',', '').split(' ')[0])
-
-        last_asked_dom = soup.select('.AskedRow')[0]
-        last_asked_time = last_asked_dom.text.replace('Last Asked ', '')
-
-        data = {
-            'follow_count': follow_count,
-            'comment_count': comment_count,
-            'answer_count': answer_count,
-            'view_count': view_count,
-            'question': question,
-            'detail': detail,
-            'last_asked': last_asked_time,
-            'url': url
-        }
-        data['score'] = self.calculate_score(data)
-        return data
-
+class Top50in2015(URLMixin):
     def get_top_50_topics_2015(self):
         with open('quora/topics.json', 'r') as fp:
             return json.load(fp)
@@ -89,7 +33,7 @@ class Quora:
         }
         topics = {}
         url = 'https://www.quora.com/What-were-the-most-followed-topics-on-Quora-in-2015'
-        soup = BeautifulSoup(self.session.get(url).text, 'lxml')
+        soup = bs(requests.get(url).text)
         containers = soup.select('.qlink_container')[2:]
         for container in containers:
             topic_name = container.find('a').text.strip()
@@ -101,40 +45,116 @@ class Quora:
         with open('quora/topics.json', 'w', encoding='utf8') as fp:
             json.dump(topics, fp, sort_keys=True, indent=2)
 
-    def get_all_questions_on_topic(self, url, commit=True):
-        soup = BeautifulSoup(self.session.get(url + '/top_questions').text, 'lxml')
-        containers = soup.select('.feed_item')
-        if not containers:
-            return False
 
-        if commit:
-            for container in containers:
-                link = container.find('a', {'class': 'question_link'}).get('href')
-                self.get_question_data1(self.get_url(link))
-        return True
+class Login(URLMixin):
+    session = requests.session()
+
+    def __init__(self, login=True):
+        if login:
+            self.cookie_login()
+            assert self.is_logged_in()
+            print('Log in successful')
+        else:
+            print('No attempts to login')
+
+    def cookie_login(self):
+        self.session.cookies['m-s'] = M_S
+
+    def is_logged_in(self):
+        response = self.session.get(self.get_url('api', 'logged_in_user'))
+        if response.status_code == 200 and len(response.text) > 9:
+            return True
+        return False
+
+
+class QuestionData(Login):
+    @staticmethod
+    def get_follow_count(soup):
+        follow_dom = soup.select('.secondary_action')[0]
+        follow_count = follow_dom.find('span', class_='count').text
+        return follow_count
+
+    @staticmethod
+    def get_comment_count(soup):
+        try:
+            comment_dom = soup.select('.view_comments')[0]
+            comment_count = comment_dom.find('span', class_='count').text
+        except (AttributeError, IndexError):
+            comment_count = '0'
+        return comment_count
+
+    @staticmethod
+    def get_answer_count(soup):
+        try:
+            answer_dom = soup.select('.answer_count')[0]
+            answer_count = answer_dom.text.split(' ')[0]
+        except (AttributeError, IndexError):
+            answer_count = '0'
+        return answer_count
+
+    @staticmethod
+    def get_title(soup):
+        question_dom = soup.select('.question_text_edit')[0]
+        title = question_dom.find('span', class_='rendered_qtext').text
+        return title
+
+    @staticmethod
+    def get_detail(soup):
+        try:
+            detail_dom = soup.select('.question_details')[0]
+        except IndexError:
+            return ''
+        detail = detail_dom.find('span', class_='rendered_qtext').text
+        return detail
+
+    @staticmethod
+    def get_view_count(soup):
+        view_dom = soup.select('.ViewsRow')[0]
+        view_count = view_dom.text.split(' ')[0]
+        return view_count
+
+    @staticmethod
+    def get_ask_time(soup):
+        ask_time_dom = soup.select('.AskedRow')[0]
+        ask_time = ask_time_dom.text.replace('Last Asked ', '')
+        return ask_time
+
+    def get_question_data(self, url, soup=None):
+        soup = soup or bs(self.session.get(url).text)
+        try:
+            data = {
+                'follow_count': self.get_follow_count(soup),
+                'comment_count': self.get_comment_count(soup),
+                'answer_count': self.get_answer_count(soup),
+                'view_count': self.get_view_count(soup),
+                'title': self.get_title(soup),
+                'detail': self.get_detail(soup),
+                'last_asked': self.get_ask_time(soup),
+                'url': url
+            }
+        except Exception as e:
+            print(url)
+            raise e
+        return data
+
+
+class Quora(QuestionData, Top50in2015, URLMixin):
+    winners = []
+    data_set = []
+
+    def get_questions_on_topic(self, url):
+        soup = bs(self.session.get(url + '/top_questions').text)
+        containers = soup.select('.feed_item')
+        for container in containers:
+            link = container.find('a', {'class': 'question_link'}).get('href')
+            data = self.get_question_data(link)
+            data['score'] = self.calculate_score(data)
+            self.data_set.append(data)
 
     def calculate_score(self, data):
-        score = data['follow_count'] / (data['answer_count'] + 1)
+        f = int_parser(data['follow_count'])
+        a = int_parser(data['answer_count'])
+        score = f / (a + 1)
         if score >= 5:
             self.winners.append(data)
         return score
-
-    def check_invalid_links_in_topic(self):
-        topics = self.get_top_50_topics_2015()
-        invalid_topics = []
-        print('Checking {} topics for invalid links: '.format(len(topics)), end='', flush=True)
-        for topic_name, topic_link in topics.items():
-            if not self.get_all_questions_on_topic(topic_link, False):
-                invalid_topics.append(topic_name)
-            print('█', end='', flush=True)
-        print('\nFollowing topic links are invalid: {}'.format(invalid_topics))
-
-    def script(self):
-        topics = self.get_top_50_topics_2015()
-        print('Scraping {} topics: '.format(len(topics)), end='', flush=True)
-        for topic_name, topic_link in topics.items():
-            self.get_all_questions_on_topic(topic_link)
-            print('█', end='', flush=True)
-        print('\n{} questions scored above requirement.'.format(len(self.winners)))
-        input("Press Enter to show results.")
-        pprint(self.winners)
