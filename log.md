@@ -21,11 +21,8 @@
 **Approach:** 
 
     1. Grab top answers from each of 250 developed questions
-    
     2. Obtain datasets for `mean answer view count` and `question's view count`
-    
     3. Normalise datasets
-    
     4. Use Pearson's r to determine correlation between two datasets
     
 **Conclusion:** Medium association (0.3<r=0.488<0.5) between question and top answers view count
