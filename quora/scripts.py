@@ -1,4 +1,6 @@
 from .scrapers import Quora, bs
+import time
+import json
 
 
 class CheckInvalidLinks(Quora):
@@ -20,8 +22,34 @@ class CheckInvalidLinks(Quora):
         print('\nFollowing topic links are invalid: {}'.format(invalid_topics))
 
 
-class Main(Quora):
-    def find_winners(self, stream=False):
+class Loop:
+    interval = 600
+
+    def loop(self, function):
+        print('Loop interval set at {} seconds.'.format(self.interval))
+        while True:
+            try:
+                function()
+            except Exception as e:
+                print(str(e))
+            time.sleep(self.interval)
+
+
+class Main(Loop, Quora):
+    def collect(self):
+        print('Collecting... ', end='', flush=True)
+        data = self.get_all_topics_data()
+        print('Ok. ', end='', flush=True)
+        filename = 'quora/data/{}.json'.format(time.strftime('%Y-%m-%d_%H:%M:%S'))
+        with open(filename, 'w', encoding='utf8') as fp:
+            json.dump(data, fp, sort_keys=True, indent=2)
+        print('File saved: {}'.format(filename))
+        return filename
+
+    def run_collect(self):
+        self.loop(self.collect)
+
+    def find_winners(self, stream=True):
         self.stream = stream
         self.winners = []
         topics = self.get_top_50_topics_2015()
@@ -29,7 +57,7 @@ class Main(Quora):
         if stream:
             print('')
         for topic_name, topic_link in topics.items():
-            self.get_questions_on_topic(topic_link)
+            self.get_questions_data_on_topic(topic_link)
             if not stream:
                 print('█', end='', flush=True)
         print('\n{} questions scored above requirement.'.format(len(self.winners)))
