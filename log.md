@@ -1,7 +1,7 @@
 # Aim: Maximum views on my answers
 
 ## Definitions
-**question infancy period:** 2 days
+**question infancy period:** 2 days 
 
 **developing question:** A question that has little to no answers, likely to be within infancy period
 

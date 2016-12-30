@@ -140,21 +140,21 @@ class QuestionData(Login):
 
 class Quora(QuestionData, Top50in2015, URLMixin):
     winners = []
-    data_set = []
+    stream = False
 
     def get_questions_on_topic(self, url):
         soup = bs(self.session.get(url + '/top_questions').text)
-        containers = soup.select('.feed_item')
+        containers = soup.select('.QuestionText')
         for container in containers:
             link = container.find('a', {'class': 'question_link'}).get('href')
-            data = self.get_question_data(link)
-            data['score'] = self.calculate_score(data)
-            self.data_set.append(data)
+            data = self.get_question_data(self.get_url(link))
+            self.algo(data)
 
-    def calculate_score(self, data):
-        f = int_parser(data['follow_count'])
+    def algo(self, data):
+        v = int_parser(data['view_count'])
         a = int_parser(data['answer_count'])
-        score = f / (a + 1)
-        if score >= 5:
+        if a <= 5 and v >= 5000:
             self.winners.append(data)
-        return score
+            if self.stream:
+                print(data)
+        return data
