@@ -1,6 +1,8 @@
 def int_parser(s):
     if type(s) == int:
         return s
+    if not s:
+        return 0
     mapping = {
         '+': 0,
         'k': 3,

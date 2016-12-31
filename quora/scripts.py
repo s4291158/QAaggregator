@@ -1,6 +1,7 @@
 from .scrapers import Quora, bs
 import time
 import json
+from threading import Timer
 
 
 class CheckInvalidLinks(Quora):
@@ -40,7 +41,7 @@ class Main(Loop, Quora):
         print('Collecting... ', end='', flush=True)
         data = self.get_all_topics_data()
         print('Ok. ', end='', flush=True)
-        filename = 'quora/data/{}.json'.format(time.strftime('%Y-%m-%d_%H:%M:%S'))
+        filename = 'quora/data1/{}.json'.format(time.strftime('%Y-%m-%d_%H:%M:%S'))
         with open(filename, 'w', encoding='utf8') as fp:
             json.dump(data, fp, sort_keys=True, indent=2)
         print('File saved: {}'.format(filename))
