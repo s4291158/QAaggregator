@@ -128,7 +128,7 @@ class QuestionData(Login, AnswerData):
     @staticmethod
     def get_answer_count(soup):
         return _find(
-            lambda: soup.select('.answer_count')[0].answer_dom.text.split(' ')[0],
+            lambda: soup.select('.answer_count')[0].text.split(' ')[0],
             '0'
         )
 
@@ -149,7 +149,7 @@ class QuestionData(Login, AnswerData):
     @staticmethod
     def get_view_count(soup):
         return _find(
-            lambda: soup.select('.ViewsRow')[0].view_dom.text.split(' ')[0],
+            lambda: soup.select('.ViewsRow')[0].text.split(' ')[0],
             '0'
         )
 
