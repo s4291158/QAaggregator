@@ -13,7 +13,9 @@
 * Code based evidence requires inspection of the code
 
 ## Experiment 1
-**Results:** Answer questions with higher view count
+**Goal:** Determine relationship between view count of question and its answers
+
+**Results:** High question view count leads to that of answers
 
 ### Part 1
 **Hypothesis:** For developed questions, high views on question results in high views on top answers
@@ -44,3 +46,9 @@
 
 **Evidence:** `from quora.ex1.scripts import P2; P2().calculate_r()`
 
+## Experiment 2
+**Goal:** Determine optimal ranking algorithm verified by simulation on past data.
+
+**Results:**
+
+### Part 1

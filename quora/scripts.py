@@ -1,7 +1,4 @@
 from .scrapers import Quora, bs
-import time
-import json
-from threading import Timer
 
 
 class CheckInvalidLinks(Quora):
@@ -23,33 +20,7 @@ class CheckInvalidLinks(Quora):
         print('\nFollowing topic links are invalid: {}'.format(invalid_topics))
 
 
-class Loop:
-    interval = 600
-
-    def loop(self, function):
-        print('Loop interval set at {} seconds.'.format(self.interval))
-        while True:
-            try:
-                function()
-            except Exception as e:
-                print(str(e))
-            time.sleep(self.interval)
-
-
-class Main(Loop, Quora):
-    def collect(self):
-        print('Collecting... ', end='', flush=True)
-        data = self.get_all_topics_data()
-        print('Ok. ', end='', flush=True)
-        filename = 'quora/data1/{}.json'.format(time.strftime('%Y-%m-%d_%H:%M:%S'))
-        with open(filename, 'w', encoding='utf8') as fp:
-            json.dump(data, fp, sort_keys=True, indent=2)
-        print('File saved: {}'.format(filename))
-        return filename
-
-    def run_collect(self):
-        self.loop(self.collect)
-
+class Main(Quora):
     def find_winners(self, stream=True):
         self.stream = stream
         self.winners = []
